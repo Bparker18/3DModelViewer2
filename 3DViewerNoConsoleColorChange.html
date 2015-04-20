@@ -1,0 +1,251 @@
+<!DOCTYPE HTML>
+<HTML>
+ <HEAD>
+  <TITLE> JSC3D - Test </TITLE>
+  <META NAME="Author" CONTENT="JSC3D">
+ </HEAD>
+
+ <BODY>
+	<div id="main_frame" style="width:490px; margin:auto; position:relative; font-size: 9pt; color: #777777;">
+		<canvas id="cv" style="border: 1px solid;" width="490" height="368" ></canvas>
+		<div id="statistics" style="position:absolute; width:100px; height:50px; left:10px; top:10px; font:12px Courier New; color:red; background:transparent;"></div>
+		<div id="loading" style="position:absolute; left:90px; top:159px;"></div>
+		<div style="float:left;">
+		<select id="model_list">
+		<option>thor.obj</option>
+		<option>Trex copy.obj</option>
+		<option>Gta-spano.obj</option>
+		<option>wraisse_main.obj</option>
+		<option>CnvergLogo3D4.obj</option>
+		<option>iPhone 5s.obj</option>
+		<option>Digger.obj</option>
+		<option>Bigmax_White.obj</option>
+		<option>CnvergLogo3D5.obj</option>
+		<option>InputFile</option>
+		</select>
+		<button id="load" onclick="loadModel();">Load</button>
+		</div>
+		<div style="float:right;">
+		<select id="render_mode_list">
+		<option>render as points</option>
+		<option>render as wireframe</option>
+		<option>render as flat</option>
+		<option>render as smooth</option>
+		<option>render with environment</option>
+		</select>
+		<button id="change" onclick="setRenderMode();">Change</button>
+		</div>
+		<div style="float:right;">
+		<select id="texture_list">
+		<option>Black.jpg</option>
+		<option>Blue.jpg</option>
+		<option>Green.jpg</option>
+		<option>Orange.jpg</option>
+		<option>Red.jpg</option>
+		<option>White.jpg</option>
+		<option>Yellow.jpg</option>
+		<button id="Choose" onclick="pickTexture();">Choose</button>
+		</div>
+		<div style="float:center;">
+		<select id="color_list">
+		<option>Green</option>
+		<option>Yellow</option>
+		<option>Blue</option>
+		<option>Red</option>
+		<option>Black</option>
+		<option>White</option>
+		</select>
+		<button id="change" onclick="setModelColor();">Change</button>
+		</div>
+	<script type="text/javascript" src="jsc3d.js"></script>
+	<script type="text/javascript" src="../jsc3d.ctm.js"></script>
+	<script type="text/javascript" src="jsc3d.touch.js"></script>
+	<script type="text/javascript" src="jsc3d.console.js"></script>
+	<script type="text/javascript" src="sonic.js"></script>
+	<script type="text/javascript">
+		// setup and activate the console singleton
+		JSC3D.console.setup('main_frame', '120px');
+		var canvas = document.getElementById('cv');
+		var viewer = new JSC3D.Viewer(canvas);
+		var logoTimerID = 0;
+		viewer.setParameter('SceneUrl', 'models/CnvergLogo3D.obj');
+		viewer.setParameter('InitRotationX', 20);
+		viewer.setParameter('InitRotationY', 20);
+		viewer.setParameter('InitRotationZ', 0);
+		viewer.setParameter('ModelColor', '#999999');
+		viewer.setParameter('BackgroundColor1', '#FFFFFF');
+		viewer.setParameter('BackgroundColor2', '#FF6600');
+		viewer.setParameter('RenderMode', 'smooth');
+		viewer.setParameter('SphereMapUrl', 'models/chrome.jpg');
+		viewer.setParameter('ProgressBar', 'off');
+		viewer.init();
+		viewer.update();
+		/*
+		 * Disable interactions in logo time.
+		 */
+		viewer.enableDefaultInputHandler(false);
+		logoTimerID = setInterval( function() { 
+			viewer.rotate(0, 10, 0);
+			viewer.update();
+		}, 100);
+		setTimeout( function() {
+			viewer.enableDefaultInputHandler(true); 
+			if(logoTimerID > 0)
+				loadModel();
+		}, 8000);
+		/*
+		 * Show our user-defined progress indicator in loading.
+		 */
+		viewer.onloadingstarted = function() {
+			displayUserDefinedProgressBar(true);
+		};
+		viewer.onloadingcomplete = viewer.onloadingaborted = viewer.onloadingerror = function() {
+			displayUserDefinedProgressBar(false);
+			if(logoTimerID > 0)
+				return;
+			// show statistics of current model when loading is completed
+			var scene = viewer.getScene();
+			if(scene && scene.getChildren().length > 0) {
+				var objects = scene.getChildren();
+				var totalFaceCount = 0;
+				var totalVertexCount = 0
+				for(var i=0; i<objects.length; i++) {
+					totalFaceCount += objects[i].faceCount;
+					totalVertexCount += objects[i].vertexBuffer.length / 3;
+				}
+				var stats = totalVertexCount.toString() + ' vertices' + '<br/>' + totalFaceCount.toString() + ' faces';
+				document.getElementById('statistics').innerHTML = stats;
+			}
+			else {
+				document.getElementById('statistics').innerHTML = '';
+			}
+		};
+		function loadModel() {
+			if(logoTimerID > 0) {
+				clearInterval(logoTimerID);
+				logoTimerID = 0;
+				viewer.enableDefaultInputHandler(true);
+			}
+			var models = document.getElementById('model_list');
+			viewer.replaceSceneFromUrl('models/' + models[models.selectedIndex].innerHTML);
+			viewer.update();
+		}
+
+		function pickTexture() {
+			if(logoTimerID > 0) {
+				clearInterval(logoTimerID);
+				logoTimerID = 0;
+				viewer.enableDefaultInputHandler(true);
+			}
+			var textures = document.getElementById('texture_list');
+			viewer.replaceSceneFromUrl('textures/' + textures[textures.selectedIndex].innerHTML);
+			JSC3D.console.logInfo('texture loaded');
+			viewer.update();
+		}
+
+		function setRenderMode() {
+			if(logoTimerID > 0)
+				return;
+			var modes = document.getElementById('render_mode_list');
+			switch(modes.selectedIndex) {
+			case 0:
+				viewer.setRenderMode('point');
+				JSC3D.console.logInfo('Set to point mode.');
+				break;
+			case 1:
+				viewer.setRenderMode('wireframe');
+				JSC3D.console.logInfo('Set to wireframe mode.');
+				break;
+			case 2:
+				viewer.setRenderMode('flat');
+				JSC3D.console.logInfo('Set to flat mode.');
+				break;
+			case 3:
+				viewer.setRenderMode('smooth');
+				JSC3D.console.logInfo('Set to smooth mode.');
+				break;
+			case 4:
+				viewer.setRenderMode('texturesmooth');
+				var scene = viewer.getScene();
+				if(scene) {
+					var objects = scene.getChildren();
+					for(var i=0; i<objects.length; i++)
+						objects[i].isEnvironmentCast = true;
+				}
+				JSC3D.console.logInfo('Set to environment-mapping mode.');
+				break;
+			default:
+				viewer.setRenderMode('flat');
+				break;
+			}
+			viewer.update();
+		}
+
+				function setModelColor() {
+			if(logoTimerID > 0)
+				return;
+			var NewColor = document.getElementById('color_list');
+			switch(NewColor.selectedIndex) {
+			case 0:
+				viewer.setParameter('ModelColor', '#006600');
+				JSC3D.console.logInfo("case 0, Green selected");
+				viewer.update();
+				break;
+			case 1:
+				viewer.setParameter('ModelColor', '#FFFF00');
+				JSC3D.console.logInfo("case 1, Yellow selected");
+				break;
+			case 2:
+				viewer.setParameter('ModelColor', '#0000FF');
+				JSC3D.console.logInfo("case 2, Blue selected");
+				break;
+			case 3:
+				viewer.setParameter('ModelColor', '#FF0000');
+				JSC3D.console.logInfo("case 3, Red selected");
+				break;
+			case 4:
+				viewer.setParameter('ModelColor', '#000000');
+				JSC3D.console.logInfo("case 4, Black selected");
+				break;
+			case 5:
+				viewer.setParameter('ModelColor', '#FFFFFF');
+				JSC3D.console.logInfo("case 5, White selected");
+				break;
+			}
+			viewer.update();
+		}
+
+		/*
+		 *	Create a user-defined progress bar.
+		 */
+		var sonic = new Sonic({
+			width: 300, 
+			height: 50, 
+			stepsPerFrame: 1, 
+			trailLength: 0.6, 
+			pointDistance: .0333, 
+			fps: 10, 
+			padding: 5, 
+			fillColor: '#00FF00', 
+			setup: function() {
+				this._.lineWidth = 20;
+			}, 
+			path: [
+				['line', 0, 20, 300, 20],
+				['line', 300, 20, 0, 20]
+			]
+		});
+		document.getElementById('loading').appendChild(sonic.canvas);
+		function displayUserDefinedProgressBar(show) {
+			if(show) {
+				sonic.play();
+				document.getElementById('loading').style.display = 'block';
+			}
+			else {
+				sonic.stop();
+				document.getElementById('loading').style.display = 'none';
+			}
+		}
+	</script>
+ </BODY>
+</HTML>
